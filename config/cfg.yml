@@ -1,10 +1,10 @@
 --- # Configuration
-g: 1
-dT: 0.2
-bodies:
-  - pos: {x:   0., y: 0.}
-    mass: 100.
-    mom: {x:   0., y: 0.}
+g: 1                       # universal gravitational constant
+dT: 0.2                    # time interval of the simulation
+bodies:                    # list of bodies
+  - pos: {x:   0., y: 0.}  # position
+    mass: 100.             # mass
+    mom: {x:   0., y: 0.}  # momentum (speed)
   - pos: {x: 100., y: 0.}
     mass: 0.1
     mom: {x:   0., y: 1.}
