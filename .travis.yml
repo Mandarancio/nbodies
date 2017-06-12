@@ -1,0 +1,30 @@
+sudo: required
+
+# @TODO
+# this should be `language: - haskell`
+# https://github.com/travis-ci/travis-ci/issues/5711
+language: sh
+
+dist: trusty
+group: edge
+
+services:
+  - docker
+
+cache:
+  directories:
+    - $HOME/.stack/
+
+before_install:
+- docker build -t verbs .
+
+- mkdir -p ~/.local/bin
+- export PATH=$HOME/.local/bin:$PATH
+- travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+install:
+- stack --no-terminal --skip-ghc-check setup
+- stack build --no-terminal --skip-ghc-check --only-snapshot
+
+script:
+- stack --no-terminal --skip-ghc-check test
