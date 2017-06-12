@@ -6,9 +6,11 @@
 module Main where
 
 import Phys
+import ConfLoader
 
 import Data.List
 import System.IO
+import System.Environment
 
 import Control.Monad
 
@@ -18,6 +20,8 @@ import SDL.Primitive
 import qualified SDL
 
 import GHC.Word
+
+
 
 ---
 --- RENDERING FUNCTION AND GRAPHICAL CONSTANTS
@@ -70,25 +74,6 @@ animateScene r n (bs:rest) = do
     if quit then  (return ()) else (animateScene r n rest)
 
 
----
---- PURE SIMULATION MAGIC
----
-
--- initial univese status
-initUniverse :: [Body]
-initUniverse = [Phys.Body Phys.zeroVec 100 Phys.zeroVec,
-                Phys.Body (Phys.Vec2D 0 100) 0.1 (Phys.Vec2D 1 0),
-                Phys.Body (Phys.Vec2D 0 200) 0.1 (Phys.Vec2D 0.7 0),
-                Phys.Body (Phys.Vec2D 0 300) 0.1 (Phys.Vec2D 0.5 0)
-               ]
-
--- Gravitational Constant
-g = 1
--- Simulation interval
-dT = 2e-1
-
--- infinite simulation
-simulation = iterate (Phys.simulate g dT) initUniverse
 
 
 ---
@@ -97,6 +82,26 @@ simulation = iterate (Phys.simulate g dT) initUniverse
 
 main :: IO ()
 main = do
+  -- retrive args
+  args <- getArgs
+  let cfg_path = if (length args) == 1 then
+                    args !! 0
+                 else
+                    error "Please specify the configuration file!"
+  ---
+  --- LOAD CONFIGURATION
+  ---
+  cfg <- loadCfg cfg_path
+  -- retrive bodies position
+  let initUniverse = bodies cfg
+
+  ---
+  --- PURE SIMULATION MAGIC
+  ---
+
+  -- infinite simulation baby!
+  let simulation = iterate (Phys.simulate (g cfg) (dT cfg)) initUniverse
+
   -- initialize SDL
   SDL.initialize [SDL.InitVideo]
   -- create Window

@@ -5,10 +5,12 @@ module Phys
   , Body(..)
   , (./)
   , (.*)
+  , dist
   , zeroVec
   , simulate
   , magnetude
   , acc
+  , createVec
   ) where
 
 -- 2D Vector
@@ -16,6 +18,10 @@ data Vec2D = Vec2D Double Double deriving (Show, Eq)
 
 -- null Vector
 zeroVec = Vec2D 0 0
+
+-- create Vec2d from (Double, Double)
+createVec :: (Double, Double) -> Vec2D
+createVec (a, b) = Vec2D a b
 
 -- basic numerical operations between Vector
 instance Num Vec2D where
@@ -41,12 +47,18 @@ instance Num Vec2D where
 (/.) :: Vec2D -> Double -> Vec2D
 (/.) (Vec2D a b) x = Vec2D (a/x) (b/x)
 
+
 -- vector magnetude
 magnetude :: Vec2D -> Double
 magnetude (Vec2D a b) = sqrt(a*a + b*b)
 
+
+-- distance between vectors
+dist :: Vec2D -> Vec2D -> Double
+dist a b = magnetude (a-b)
+
 -- celestial body type
-data Body = Body {pos::Vec2D,mass::Double,mom::Vec2D} deriving Show
+data Body = Body {pos::Vec2D,mass::Double,mom::Vec2D} deriving (Show, Eq)
 
 -- compute the acceleration between 2 bodies
 acc :: Double ->  Body -> Body -> Vec2D
