@@ -62,22 +62,22 @@ main = do
 
   SDL.showWindow window
   screenSurface <- SDL.getWindowSurface window
-  ref <- newIORef [Phys.Body Phys.zeroVec 100 Phys.zeroVec, Phys.Body (Phys.Vec2D 0 100) 0.1 (Phys.Vec2D 1 0),  Phys.Body (Phys.Vec2D 0 200) 0.1 (Phys.Vec2D 0.7 0)]
+  -- initialize bodies
+  bodies <- newIORef [Phys.Body Phys.zeroVec 100 Phys.zeroVec, Phys.Body (Phys.Vec2D 0 100) 0.1 (Phys.Vec2D 1 0),  Phys.Body (Phys.Vec2D 0 200) 0.1 (Phys.Vec2D 0.7 0)]
 
   let
     loop = do
       events <- SDL.pollEvents
       let quit = elem SDL.QuitEvent $ map SDL.eventPayload events
       SDL.rendererDrawColor renderer SDL.$= black
+      -- clear screen
       SDL.clear renderer
-      -- bodies <- Phys.simulate g dT bodies
-      modifyIORef ref (Phys.simulate g dT)
-      readIORef ref >>= (renderAll renderer)
-
-
-      -- SDL.Primitive.fillCircle renderer (V2 100 100) 5 white
+      -- update bodies position and speed
+      modifyIORef bodies (Phys.simulate g dT)
+      -- render bodies
+      readIORef bodies >>= (renderAll renderer)
+      -- display bodies
       SDL.present renderer
-
       unless quit loop
   loop
 
