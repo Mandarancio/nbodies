@@ -61,7 +61,7 @@ acc g (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_}) =
 computeStep :: Double -> Double -> [Body] -> Body -> Body
 computeStep _ _ [] b = b
 computeStep g dT bodies b@(Body{pos = p, mass = m, mom = s}) =
-  let newSpeed =  dT .* (sum (map (acc g b) bodies)) + s
+  let newSpeed =  (dT .* (sum (map (acc g b) bodies))) + s
       newPos = (dT .* newSpeed) + p
   in Body{pos=newPos, mass=m, mom = newSpeed}
 
