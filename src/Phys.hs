@@ -4,14 +4,21 @@ module Phys
   (Vec2D(..)
   , Body(..)
   , (./)
+  , (/.)
   , (.*)
+  , (*.)
+  , get
   , dist
   , zeroVec
   , simulate
   , magnetude
   , acc
   , createVec
+  , VEnum(..)
   ) where
+
+
+data VEnum = X | Y deriving (Show, Eq)
 
 -- 2D Vector
 data Vec2D = Vec2D Double Double deriving (Show, Eq)
@@ -47,6 +54,10 @@ instance Num Vec2D where
 (/.) :: Vec2D -> Double -> Vec2D
 (/.) (Vec2D a b) x = Vec2D (a/x) (b/x)
 
+
+get :: Vec2D -> VEnum -> Double
+get (Vec2D x _) X = x
+get (Vec2D _ y) Y = y
 
 -- vector magnetude
 magnetude :: Vec2D -> Double
