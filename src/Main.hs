@@ -36,7 +36,7 @@ white = V4 255 255 255 255
 -- Gravitational Constant
 g = 1
 -- Simulation interval
-dT = 1e-1
+dT = 2e-1
 
 -- function to render all bodies
 renderBodies :: SDL.Renderer -> [Body] -> IO ()
@@ -45,7 +45,7 @@ renderBodies r (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
   let ratio = round (5*(mass/100))
   let radius = if  ratio > 0 then ratio else 1
   SDL.Primitive.fillCircle r (V2 (round (x + cx)) (round (y + cy))) radius white
-  SDL.Primitive.smoothCircle r (V2 (round (x + cx)) (round (y + cy))) radius white
+  SDL.Primitive.circle r (V2 (round (x + cx)) (round (y + cy))) radius white
   renderBodies r rest
   return ()
 
@@ -54,15 +54,17 @@ renderBodies r (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
 renderScene :: SDL.Renderer -> [Body] -> IO ()
 renderScene _ [] = do return ()
 renderScene r bs = do
+    events <- SDL.pollEvents
+    -- check if quit action performed
+    let quit = elem SDL.QuitEvent $ map SDL.eventPayload events
     -- clean scene
     SDL.rendererDrawColor r SDL.$= black
     SDL.clear r
     -- display all bodies
     renderBodies r bs
-    -- show scene
-    SDL.present r
+    -- die or show scene
+    if quit then (error "Simulation is over") else (SDL.present r)
     return ()
-
 
 -- initial univese status
 initUniverse :: [Body]
@@ -73,7 +75,7 @@ initUniverse = [Phys.Body Phys.zeroVec 100 Phys.zeroVec,
                ]
 
 -- infinit simulation
-simulation = iterate  (Phys.simulate g dT . (Phys.simulate g dT)) initUniverse
+simulation = iterate (Phys.simulate g dT) initUniverse
 
 
 -- Entry point
@@ -92,8 +94,12 @@ main = do
   -- prepare to render all infinite simulation
   let displayedStates = fmap (renderScene renderer) simulation
 
-  -- every 10ms display a new step of the simulation
-  sequence_ $ intersperse (SDL.delay 10) displayedStates
+  -- every N ms display a new step of the simulation
+  sequence_ $ intersperse (SDL.delay 2) displayedStates
+
+  -- clean everything up
+  SDL.destroyWindow window
+  SDL.quit
 
 
 
