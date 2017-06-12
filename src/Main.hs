@@ -8,7 +8,6 @@ module Main where
 import Phys
 
 import Data.List
-import Data.IORef
 import System.IO
 
 import Control.Monad
@@ -19,6 +18,10 @@ import SDL.Primitive
 import qualified SDL
 
 import GHC.Word
+
+---
+--- RENDERING FUNCTION AND GRAPHICAL CONSTANTS
+---
 
 -- screen information
 screenWidth, screenHeight :: CInt
@@ -35,10 +38,6 @@ black = V4 0 0 0 255
 white :: SDL.Primitive.Color
 white = V4 255 255 255 255
 
--- Gravitational Constant
-g = 1
--- Simulation interval
-dT = 2e-1
 
 -- function to render all bodies
 renderBodies :: SDL.Renderer -> [Body] -> IO ()
@@ -55,6 +54,7 @@ renderBodies r (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
 animateScene :: SDL.Renderer -> GHC.Word.Word32 -> [[Body]] -> IO ()
 animateScene _ _ [] = do return ()
 animateScene r n (bs:rest) = do
+    -- wait n ms
     SDL.delay n
     events <- SDL.pollEvents
     -- check if quit action performed
@@ -64,10 +64,15 @@ animateScene r n (bs:rest) = do
     SDL.clear r
     -- display all bodies
     renderBodies r bs
-    -- die or show scene
+    -- show  the scene
     SDL.present r
+    -- die or continue!
     if quit then  (return ()) else (animateScene r n rest)
 
+
+---
+--- PURE SIMULATION MAGIC
+---
 
 -- initial univese status
 initUniverse :: [Body]
@@ -77,17 +82,25 @@ initUniverse = [Phys.Body Phys.zeroVec 100 Phys.zeroVec,
                 Phys.Body (Phys.Vec2D 0 300) 0.1 (Phys.Vec2D 0.5 0)
                ]
 
--- infinit simulation
+-- Gravitational Constant
+g = 1
+-- Simulation interval
+dT = 2e-1
+
+-- infinite simulation
 simulation = iterate (Phys.simulate g dT) initUniverse
 
 
--- Entry point
+---
+--- MAIN ENTRY POINT
+---
+
 main :: IO ()
 main = do
   -- initialize SDL
   SDL.initialize [SDL.InitVideo]
   -- create Window
-  window <- SDL.createWindow "SDL Tutorial" SDL.defaultWindow { SDL.windowInitialSize = V2 screenWidth screenHeight }
+  window <- SDL.createWindow "N-Body Simulation" SDL.defaultWindow { SDL.windowInitialSize = V2 screenWidth screenHeight }
   -- create Renderer
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
 

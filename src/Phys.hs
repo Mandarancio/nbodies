@@ -33,7 +33,6 @@ instance Num Vec2D where
 
 -- multiplication vector double
 (*.) = flip (*.)
-
 -- division double vector
 (./) :: Double -> Vec2D -> Vec2D
 (./) x (Vec2D a b) = Vec2D (x/a) (x/b)
