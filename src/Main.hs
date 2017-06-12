@@ -18,6 +18,8 @@ import SDL.Vect
 import SDL.Primitive
 import qualified SDL
 
+import GHC.Word
+
 -- screen information
 screenWidth, screenHeight :: CInt
 (screenWidth, screenHeight) = (800, 600)
@@ -49,11 +51,11 @@ renderBodies r (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
   renderBodies r rest
   return ()
 
-
--- function to render the scene (clean, render body)
-renderScene :: SDL.Renderer -> [Body] -> IO ()
-renderScene _ [] = do return ()
-renderScene r bs = do
+-- animate the scene
+animateScene :: SDL.Renderer -> GHC.Word.Word32 -> [[Body]] -> IO ()
+animateScene _ _ [] = do return ()
+animateScene r n (bs:rest) = do
+    SDL.delay n
     events <- SDL.pollEvents
     -- check if quit action performed
     let quit = elem SDL.QuitEvent $ map SDL.eventPayload events
@@ -63,8 +65,9 @@ renderScene r bs = do
     -- display all bodies
     renderBodies r bs
     -- die or show scene
-    if quit then (error "Simulation is over") else (SDL.present r)
-    return ()
+    SDL.present r
+    if quit then  (return ()) else (animateScene r n rest)
+
 
 -- initial univese status
 initUniverse :: [Body]
@@ -91,12 +94,8 @@ main = do
   -- show Windo
   SDL.showWindow window
 
-  -- prepare to render all infinite simulation
-  let displayedStates = fmap (renderScene renderer) simulation
-
   -- every N ms display a new step of the simulation
-  sequence_ $ intersperse (SDL.delay 2) displayedStates
-
+  animateScene renderer 2 simulation
   -- clean everything up
   SDL.destroyWindow window
   SDL.quit
