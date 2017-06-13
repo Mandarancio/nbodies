@@ -6,6 +6,7 @@ module BarnesHut (QBox(..)
                  , usize
                  , vecbodies
                  , createRoot
+                 , b2vs
                  , BarnesHut.simulate
                  ) where
 import Phys
@@ -76,13 +77,14 @@ computeForce :: QTree -> Phys.Body -> Vec2D
 computeForce (QE _) b = zeroVec
 computeForce (QL _ b1) b2 | b1 == b2 = zeroVec
 computeForce (QL _ b1) b2 | b1 /= b2 = force b2 b1
-computeForce (QN box pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} | not (box `contains` p) =
+computeForce (QN box _ _ tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) =
+  (computeForce tl b) + (computeForce bl b) + (computeForce tr b) + (computeForce br b)
+computeForce (QN box@(QB _ size) pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} | (not (box `contains` p)) && ((size/(dist pmass p))<0.5) =
   let dist = pmass - p
       denom = ((magnetude dist)^3)
   in ((mass * m)/denom) .* dist
-computeForce (QN box _ _ tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) =
+computeForce (QN box@(QB _ size) pmass _ tl bl tr br) b@Body{pos=p, mass=m, mom=_} | (not (box `contains` p)) && ((size/(dist pmass p))>=0.5) =
   (computeForce tl b) + (computeForce bl b) + (computeForce tr b) + (computeForce br b)
-
 
 bhSimulate :: Double -> Double -> QTree -> [Body] -> [Body]
 bhSimulate _ _ _ [] = []

@@ -13,6 +13,9 @@ import Phys
 data Config = Config{
   g::Double,
   dT::Double,
+  debug::Bool,
+  bhMode::Bool,
+  scale::Double,
   bodies::[Phys.Body]
   } deriving (Show,Eq)
 
@@ -38,6 +41,9 @@ instance FromJSON Config where
     Config <$>
     v .:   "g"  <*>
     v .:   "dT" <*>
+    v .:   "debug" <*>
+    v .:   "barnesHut" <*>
+    v .:   "scale" <*>
     v .:   "bodies"
   parseJSON _ = fail "Expected Object for Config value"
 

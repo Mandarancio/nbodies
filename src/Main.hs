@@ -48,41 +48,50 @@ green = V4 0 255 0 125
 
 
 -- render a QBox
-renderQBox :: SDL.Renderer -> QBox -> IO()
-renderQBox r (QB (Vec2D x y) s)= do
-  let plt = V2 (round (x + cx)) (round (y + cy))
-  let pbr = V2 (round (x + s + cx)) (round (y + s + cy))
+renderQBox :: SDL.Renderer -> Double -> QBox -> IO()
+renderQBox r scale (QB (Vec2D x y) s)= do
+  let plt = V2 (round (x * scale + cx)) (round (y * scale + cy))
+  let pbr = V2 (round (x * scale + s * scale + cx)) (round (y * scale + s *scale + cy))
   SDL.Primitive.rectangle r plt pbr green
   return ()
 
 -- render QTree
-renderTree :: SDL.Renderer -> QTree -> IO()
-renderTree r (QE box) = renderQBox r box
-renderTree r (QL box _) = renderQBox r box
-renderTree r (QN box _ _ tl bl tr br) = do
-  renderQBox r box
-  renderTree r tl
-  renderTree r bl
-  renderTree r tr
-  renderTree r br
+renderTree :: SDL.Renderer -> Double -> QTree -> IO()
+renderTree r scale (QE box) = renderQBox r scale box
+renderTree r scale (QL box _) = renderQBox r scale box
+renderTree r scale (QN box _ _ tl bl tr br) = do
+  renderQBox r scale box
+  renderTree r scale tl
+  renderTree r scale bl
+  renderTree r scale tr
+  renderTree r scale br
   return ()
 
+-- create and render tree
+renderDebugTree :: SDL.Renderer -> Double -> Bool -> [Body] -> IO ()
+renderDebugTree _ _ False _ = return ()
+renderDebugTree r scale True bs = do
+  let root = createRoot bs
+  let tree = fillTree root bs
+  renderTree r scale tree
 
 -- function to render all bodies
-renderBodies :: SDL.Renderer -> [Body] -> IO ()
-renderBodies r [] = do return ()
-renderBodies r (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
+renderBodies :: SDL.Renderer -> Double -> [Body] -> IO ()
+renderBodies _ _ [] = do return ()
+renderBodies r scale (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
   let ratio = round (5*(mass/100))
-  let radius = if  ratio > 0 then ratio else 1
-  SDL.Primitive.fillCircle r (V2 (round (x + cx)) (round (y + cy))) radius white
-  SDL.Primitive.circle r (V2 (round (x + cx)) (round (y + cy))) radius white
-  renderBodies r rest
-  return ()
+  let center = (V2 (round (x * scale + cx)) (round (y * scale + cy)))
+  if  ratio > 0 then
+    (SDL.Primitive.fillCircle r center ratio white)
+  else
+    (SDL.Primitive.pixel r center white)
+  renderBodies r scale rest
+
 
 -- animate the scene
-animateScene :: SDL.Renderer -> GHC.Word.Word32 -> [[Body]] -> IO ()
-animateScene _ _ [] = do return ()
-animateScene r n (bs:rest) = do
+animateScene :: SDL.Renderer -> GHC.Word.Word32 -> Double -> Bool -> [[Body]] -> IO ()
+animateScene _ _ _ _ [] = do return ()
+animateScene r n scale debug (bs:rest) = do
     -- wait n ms
     SDL.delay n
     events <- SDL.pollEvents
@@ -91,15 +100,15 @@ animateScene r n (bs:rest) = do
     -- clean scene
     SDL.rendererDrawColor r SDL.$= black
     SDL.clear r
+
     -- display all bodies
-    renderBodies r bs
-    let root = createRoot bs
-    let tree = fillTree root bs
-    renderTree r tree
+    renderBodies r scale bs
+    -- display Quad tree debug
+    renderDebugTree r scale debug bs
     -- show  the scene
     SDL.present r
     -- die or continue!
-    if quit then  (return ()) else (animateScene r n rest)
+    if quit then  (return ()) else (animateScene r n scale debug rest)
 
 
 
@@ -120,6 +129,7 @@ main = do
   --- LOAD CONFIGURATION
   ---
   cfg <- loadCfg cfg_path
+
   -- retrive bodies position
   let initUniverse = bodies cfg
 
@@ -128,7 +138,10 @@ main = do
   ---
 
   -- infinite simulation baby!
-  let simulation = iterate (BarnesHut.simulate (g cfg) (dT cfg)) initUniverse
+  let simulation = if (bhMode cfg) then
+                      iterate (BarnesHut.simulate (g cfg) (dT cfg)) initUniverse
+                   else
+                      iterate (Phys.simulate (g cfg) (dT cfg)) initUniverse
 
   -- initialize SDL
   SDL.initialize [SDL.InitVideo]
@@ -141,7 +154,7 @@ main = do
   SDL.showWindow window
 
   -- every N ms display a new step of the simulation
-  animateScene renderer 3 simulation
+  animateScene renderer 3 (scale cfg) (debug cfg) simulation
   -- clean everything up
   SDL.destroyWindow window
   SDL.quit

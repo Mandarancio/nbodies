@@ -1,6 +1,9 @@
----
-g: 1
-dT: 0.02
+--- # Configuration
+debug: true                # debug enabled
+barnesHut: true            # barnes hut simulation
+g: 1e1                     # universal gravitational constant
+dT: 1e-1                   # time interval of the simulation
+scale: 1
 bodies:
   - pos: {x: 13.8814176387, y: -25.4462845921}
     mass: -0.14740353575893234
