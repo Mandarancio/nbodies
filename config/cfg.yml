@@ -1,6 +1,7 @@
 --- # Configuration
+# debug: true                # debug enabled
 g: 1                       # universal gravitational constant
-dT: 0.2                    # time interval of the simulation
+dT: 0.5                    # time interval of the simulation
 bodies:                    # list of bodies
   - pos: {x:   0., y: 0.}  # position
     mass: 100.             # mass

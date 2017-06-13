@@ -76,7 +76,8 @@ force :: Body -> Body -> Vec2D
 force (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | p1 == p2 =  zeroVec
 force (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_}) =
   let dist = (p2-p1)
-  in (m1*m2/(magnetude dist)^3) .* dist
+
+  in if (magnetude dist < 2) then zeroVec else  ((m1*m2/(magnetude dist)^3) .* dist)
 
 
 -- compute the acceleration between 2 bodies

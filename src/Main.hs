@@ -141,7 +141,7 @@ main = do
   SDL.showWindow window
 
   -- every N ms display a new step of the simulation
-  animateScene renderer 2 simulation
+  animateScene renderer 3 simulation
   -- clean everything up
   SDL.destroyWindow window
   SDL.quit
