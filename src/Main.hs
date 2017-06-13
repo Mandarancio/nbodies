@@ -44,7 +44,7 @@ white :: SDL.Primitive.Color
 white = V4 255 255 255 255
 
 green :: SDL.Primitive.Color
-green = V4 0 255 0 125
+green = V4 0 255 0 50
 
 
 -- render a QBox
@@ -101,10 +101,11 @@ animateScene r n scale debug (bs:rest) = do
     SDL.rendererDrawColor r SDL.$= black
     SDL.clear r
 
+    -- display Quad tree debug *if needed*
+    renderDebugTree r scale debug bs
     -- display all bodies
     renderBodies r scale bs
-    -- display Quad tree debug
-    renderDebugTree r scale debug bs
+
     -- show  the scene
     SDL.present r
     -- die or continue!

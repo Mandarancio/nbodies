@@ -1,7 +1,7 @@
 --- # Configuration
 debug: true                # debug enabled
 barnesHut: true            # barnes hut simulation
-g: 1e1                     # universal gravitational constant
+g: 1e-1                     # universal gravitational constant
 dT: 1e-1                   # time interval of the simulation
 scale: 1
 bodies:
