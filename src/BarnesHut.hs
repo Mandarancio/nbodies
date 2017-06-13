@@ -1,23 +1,28 @@
 {-Barnes Hut Algo-}
 
-module BarnesHut () where
+module BarnesHut (QBox(..)
+                 , QTree(..)
+                 , fillTree
+                 , usize
+                 , vecbodies
+                 ) where
 import Phys
 
-data QBox = QB Vec2D Vec2D Double deriving (Show, Eq) -- mass center, position, size
+data QBox = QB Vec2D Double deriving (Show, Eq) -- mass center, position, size
 
 -- quad tree
-data QTree = QN QBox Double QTree QTree QTree QTree -- NODE Box, Mass (sub-nodes)
+data QTree = QN QBox Vec2D Double QTree QTree QTree QTree -- NODE Box, Mass (sub-nodes)
            | QL QBox Body -- Leaf (pos*mass, mass)
            | QE QBox-- Empty Leaf
         deriving (Show, Eq)
 
 
 contains :: QBox -> Vec2D -> Bool
-contains (QB _ _ 0) _ = False
-contains (QB _ (Vec2D l t) s) (Vec2D x y) =
+contains (QB _ 0) _ = False
+contains (QB (Vec2D l t) s) (Vec2D x y) =
   let w = x - l
       h = y - t
-  in (w > 0) && (w < s) && (h > 0) && (h < s)
+  in (w > 0) && (w <= s) && (h > 0) && (h <= s)
 
 b2vs :: [Body] -> [Vec2D]
 b2vs [] = []
@@ -29,42 +34,44 @@ mdist bs b = maximum (map (Phys.dist b) bs)
 
 usize :: [Vec2D] -> Double
 usize [] = 0
-usize bs = maximum (map (mdist bs) bs)
+usize bs = maximum (map (dist zeroVec) bs)
 
+
+vecbodies :: [Body] -> [Vec2D]
+vecbodies [] = []
+vecbodies ((Body{pos=x, mass=_, mom=_}):rest) = x : (vecbodies rest)
 
 addBody :: QTree -> Phys.Body -> QTree
-addBody (QE box@(QB _ lt s)) body@(Phys.Body{pos=p, mass=m, mom=_}) | box `contains` p =
-  QL (QB (m.*p) lt s) body
+addBody (QE box@(QB lt s)) body@(Phys.Body{pos=p, mass=m, mom=_}) | box `contains` p =
+  QL (QB lt s) body
 addBody node@(QE box)  (Phys.Body{pos=p, mass=_, mom=_}) | not (box `contains` p) = node
 addBody node@(QL box _) (Phys.Body{pos=p, mass=_, mom=_}) | not (box `contains` p) = node
-addBody (QL box@(QB _ lt s) body') body@(Phys.Body{pos=p, mass=m, mom=_}) | box `contains` p =
+addBody (QL box@(QB lt s) body') body@(Phys.Body{pos=p, mass=m, mom=_}) | box `contains` p =
   let ns = s/2
-      tln = addBody (addBody (QE (QB zeroVec lt ns)) body') body
-      bln = addBody (addBody (QE (QB zeroVec (lt + (Vec2D 0 ns)) ns)) body') body
-      trn = addBody (addBody (QE (QB zeroVec (lt + (Vec2D ns 0)) ns)) body') body
-      brn = addBody (addBody (QE (QB zeroVec (lt + (Vec2D ns ns)) ns)) body') body
+      tln = addBody (addBody (QE (QB lt ns)) body') body
+      bln = addBody (addBody (QE (QB (lt + (Vec2D 0 ns)) ns)) body') body
+      trn = addBody (addBody (QE (QB (lt + (Vec2D ns 0)) ns)) body') body
+      brn = addBody (addBody (QE (QB (lt + (Vec2D ns ns)) ns)) body') body
       totalmass = m + (mass body')
       avg_pos = ((m .* p) + ((mass body') .* (pos body'))) /. totalmass
-  in QN (QB avg_pos lt s) totalmass tln bln trn brn
-addBody node@(QN box _ _ _ _ _) Phys.Body{pos=p, mass=_, mom=_} | not (box `contains` p) = node
-addBody (QN box@(QB mc lt s) mass tl bl tr br) body@(Phys.Body{pos=p, mass=m, mom=_}) | (box `contains` p) =
+  in QN (QB lt s) avg_pos totalmass tln bln trn brn
+addBody node@(QN box _ _ _ _ _ _) Phys.Body{pos=p, mass=_, mom=_} | not (box `contains` p) = node
+addBody (QN box@(QB lt s) mc mass tl bl tr br) body@(Phys.Body{pos=p, mass=m, mom=_}) | (box `contains` p) =
   let total_mass = mass + m
-      nmc = mc + (((m .* p) - (mass .* mc)) /. total_mass)
+      nmc = mc + (((m .* p) - mc) /. total_mass)
       ntl = addBody tl body
       nbl = addBody bl body
       ntr = addBody tr body
       nbr = addBody br body
-  in QN (QB nmc lt s) total_mass ntl nbl ntr nbr
+  in QN (QB lt s) nmc total_mass ntl nbl ntr nbr
 
--- -- createTree :: [Phys.Node] -> BHT -> BHT
--- createTree [] node = node
--- createTree (b@Body{pos=p, mass=m, mom=_}:rest) (Node pos mass size []) =
-  -- createTree rest (Leaf pos (mass+m) (magnetude (p-pos)) [b])
--- createTree (b@Body{pos=p, mass=m, mom=_}:rest) (Leaf pos mass size (a:[]))) =
-  -- let dist_bl = magnetude (p - pos)
-      -- new_size = if dist_bl > size then size else dist_bl
-  -- in createTree rest (Leaf pos (mass+m) new_size [a, b])
--- createTree (b@Body{pos=p, mass=m, mom_}:rest) (Leaf pos mass size (a:b:[])) =
-  -- let dist_bl = magnetude (p - pos)
-  -- in createTree rest (Node pos (mass+m) new_size [leaf_a, leaf_b])
--- createTree ()
+fillTree :: QTree -> [Phys.Body] -> QTree
+fillTree x [] = x
+fillTree x (b:rest) = fillTree (addBody x b) rest
+
+
+-- test :: IO()
+-- test = do
+--   let bs = [Body{pos=(Vec2D 0.2 0.5), mass=1, mom=zeroVec},Body{pos=(Vec2D 0.3 0.2), mass=1, mom=zeroVec}]
+--   let tree = fillTree (QE (QB zeroVec 2)) bs
+--   print(tree)

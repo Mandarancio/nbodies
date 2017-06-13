@@ -7,6 +7,7 @@ module Main where
 
 import Phys
 import ConfLoader
+import BarnesHut
 
 import Data.List
 import System.IO
@@ -42,6 +43,30 @@ black = V4 0 0 0 255
 white :: SDL.Primitive.Color
 white = V4 255 255 255 255
 
+green :: SDL.Primitive.Color
+green = V4 0 255 0 125
+
+
+-- render a QBox
+renderQBox :: SDL.Renderer -> QBox -> IO()
+renderQBox r (QB (Vec2D x y) s)= do
+  let plt = V2 (round (x + cx)) (round (y + cy))
+  let pbr = V2 (round (x + s + cx)) (round (y + s + cy))
+  SDL.Primitive.rectangle r plt pbr green
+  return ()
+
+-- render QTree
+renderTree :: SDL.Renderer -> QTree -> IO()
+renderTree r (QE box) = renderQBox r box
+renderTree r (QL box _) = renderQBox r box
+renderTree r (QN box _ _ tl bl tr br) = do
+  renderQBox r box
+  renderTree r tl
+  renderTree r bl
+  renderTree r tr
+  renderTree r br
+  return ()
+
 
 -- function to render all bodies
 renderBodies :: SDL.Renderer -> [Body] -> IO ()
@@ -68,6 +93,10 @@ animateScene r n (bs:rest) = do
     SDL.clear r
     -- display all bodies
     renderBodies r bs
+    let size = usize (vecbodies bs)
+    let root = QE (QB (Vec2D (-size-1) (-size-1)) (2*size+2))
+    let tree = fillTree root bs
+    renderTree r tree
     -- show  the scene
     SDL.present r
     -- die or continue!
