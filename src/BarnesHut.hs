@@ -5,6 +5,8 @@ module BarnesHut (QBox(..)
                  , fillTree
                  , usize
                  , vecbodies
+                 , createRoot
+                 , BarnesHut.simulate
                  ) where
 import Phys
 
@@ -58,7 +60,7 @@ addBody (QL box@(QB lt s) body') body@(Phys.Body{pos=p, mass=m, mom=_}) | box `c
 addBody node@(QN box _ _ _ _ _ _) Phys.Body{pos=p, mass=_, mom=_} | not (box `contains` p) = node
 addBody (QN box@(QB lt s) mc mass tl bl tr br) body@(Phys.Body{pos=p, mass=m, mom=_}) | (box `contains` p) =
   let total_mass = mass + m
-      nmc = mc + (((m .* p) - mc) /. total_mass)
+      nmc = mc + (((m .* p) - (mass .* mc)) /. total_mass)
       ntl = addBody tl body
       nbl = addBody bl body
       ntr = addBody tr body
@@ -69,6 +71,42 @@ fillTree :: QTree -> [Phys.Body] -> QTree
 fillTree x [] = x
 fillTree x (b:rest) = fillTree (addBody x b) rest
 
+
+computeForce :: QTree -> Phys.Body -> Vec2D
+computeForce (QE _) b = zeroVec
+computeForce (QL _ b1) b2 | b1 == b2 = zeroVec
+computeForce (QL _ b1) b2 | b1 /= b2 = force b2 b1
+computeForce (QN box pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} | not (box `contains` p) =
+  let dist = pmass - p
+      denom = ((magnetude dist)^3)
+  in ((mass * m)/denom) .* dist
+computeForce (QN box _ _ tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) =
+  (computeForce tl b) + (computeForce bl b) + (computeForce tr b) + (computeForce br b)
+
+
+bhSimulate :: Double -> Double -> QTree -> [Body] -> [Body]
+bhSimulate _ _ _ [] = []
+bhSimulate g dT root (body@Body{pos=p, mass=m, mom=s}:rest) =
+  let force = g .* (computeForce root body)
+      acc = force /. m
+      speed = s + (dT .* acc)
+      pos = p + (dT .* speed)
+  in Body{pos=pos, mass=m, mom=speed}:(bhSimulate g dT root rest)
+
+
+createRoot :: [Body] -> QTree
+createRoot [] = QE (QB zeroVec 0)
+createRoot bodies =
+  let size = usize (b2vs bodies)
+      bbox = QB (Vec2D ((-size)-1) ((-size) -1)) (2*size + 2)
+  in QE bbox
+
+simulate :: Double -> Double -> [Body] -> [Body]
+simulate _ _ [] = []
+simulate g dT bodies =
+  let root = createRoot bodies
+      tree = fillTree root bodies
+  in bhSimulate g dT tree bodies
 
 -- test :: IO()
 -- test = do

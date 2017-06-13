@@ -13,6 +13,7 @@ module Phys
   , simulate
   , magnetude
   , acc
+  , force
   , createVec
   , VEnum(..)
   ) where
@@ -70,6 +71,13 @@ dist a b = magnetude (a-b)
 
 -- celestial body type
 data Body = Body {pos::Vec2D,mass::Double,mom::Vec2D} deriving (Show, Eq)
+
+force :: Body -> Body -> Vec2D
+force (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | p1 == p2 =  zeroVec
+force (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_}) =
+  let dist = (p2-p1)
+  in (m1*m2/(magnetude dist)^3) .* dist
+
 
 -- compute the acceleration between 2 bodies
 acc :: Double ->  Body -> Body -> Vec2D

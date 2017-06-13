@@ -93,8 +93,7 @@ animateScene r n (bs:rest) = do
     SDL.clear r
     -- display all bodies
     renderBodies r bs
-    let size = usize (vecbodies bs)
-    let root = QE (QB (Vec2D (-size-1) (-size-1)) (2*size+2))
+    let root = createRoot bs
     let tree = fillTree root bs
     renderTree r tree
     -- show  the scene
@@ -129,7 +128,7 @@ main = do
   ---
 
   -- infinite simulation baby!
-  let simulation = iterate (Phys.simulate (g cfg) (dT cfg)) initUniverse
+  let simulation = iterate (BarnesHut.simulate (g cfg) (dT cfg)) initUniverse
 
   -- initialize SDL
   SDL.initialize [SDL.InitVideo]

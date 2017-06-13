@@ -14,3 +14,6 @@ bodies:                    # list of bodies
   - pos: {x: 300., y: 0.}
     mass: 0.1
     mom: {x:   0., y: 0.5}
+  - pos: {x: 150., y: 0.}
+    mass: 0.1
+    mom: {x:   0., y: 0.8}
