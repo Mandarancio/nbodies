@@ -3,7 +3,7 @@ debug: false
 barnesHut: true
 g: 1e3
 dT: 0.02
-scale: 1
+scale: 0
 bodies:
   - pos: {x: -63.213152, y: -90.977001}
     mass: 0.15625001

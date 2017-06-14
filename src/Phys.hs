@@ -15,6 +15,8 @@ module Phys
   , acc
   , force
   , createVec
+  , b2vs
+  , usize
   , VEnum(..)
   ) where
 
@@ -55,7 +57,7 @@ instance Num Vec2D where
 (/.) :: Vec2D -> Double -> Vec2D
 (/.) (Vec2D a b) x = Vec2D (a/x) (b/x)
 
-
+-- get vector component
 get :: Vec2D -> VEnum -> Double
 get (Vec2D x _) X = x
 get (Vec2D _ y) Y = y
@@ -72,11 +74,13 @@ dist a b = magnetude (a-b)
 -- celestial body type
 data Body = Body {pos::Vec2D,mass::Double,mom::Vec2D} deriving (Show, Eq)
 
+-- compute force between 2 bodies
 force :: Body -> Body -> Vec2D
 force (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | p1 == p2 =  zeroVec
+force (Body{pos=p1,mass=_,mom=_}) (Body{pos=p2,mass=_,mom=_}) | (dist p1 p2) < 0.002 = zeroVec
 force (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_O}) =
   let dist = (p2-p1)
-  in if (magnetude dist < 1e-3) then zeroVec else  ((m1*m2/(magnetude dist)^3) .* dist)
+  in ((m1*m2/(magnetude dist)^3) .* dist)
 
 
 -- compute the acceleration between 2 bodies
@@ -97,3 +101,13 @@ computeStep g dT bodies b@(Body{pos = p, mass = m, mom = s}) =
 -- simulate an iteration of a certain universe of [Body]
 simulate :: Double -> Double -> [Body] -> [Body]
 simulate g dT bodies = map (computeStep g dT bodies) bodies
+
+-- bodies position to vector list
+b2vs :: [Body] -> [Vec2D]
+b2vs [] = []
+b2vs (Body{pos=p, mass=m, mom=_}:rest) = p:(b2vs rest)
+
+-- compute the universe size
+usize :: [Vec2D] -> Double
+usize [] = 0
+usize bs = maximum (map (dist zeroVec) bs)

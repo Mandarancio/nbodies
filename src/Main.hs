@@ -49,6 +49,7 @@ green = V4 0 255 0 50
 
 -- render a QBox
 renderQBox :: SDL.Renderer -> Double -> QBox -> IO()
+renderQBox _ scale (QB _ s) | (s*scale) <= 1  = return ()
 renderQBox r scale (QB (Vec2D x y) s)= do
   let plt = V2 (round (x * scale + cx)) (round (y * scale + cy))
   let pbr = V2 (round (x * scale + s * scale + cx)) (round (y * scale + s *scale + cy))
@@ -75,16 +76,29 @@ renderDebugTree r scale True bs = do
   let tree = fillTree root bs
   renderTree r scale tree
 
+
+-- draw cross function
+xcross :: SDL.Renderer -> V2 CInt -> Color -> IO ()
+xcross r (V2 x y) color= do
+  SDL.Primitive.pixel r (V2 x y) color
+  SDL.Primitive.pixel r (V2 (x + 1) y) color
+  SDL.Primitive.pixel r (V2 (x - 1) y) color
+  SDL.Primitive.pixel r (V2 x (y + 1)) color
+  SDL.Primitive.pixel r (V2 x (y - 1)) color
+  return ()
+
 -- function to render all bodies
 renderBodies :: SDL.Renderer -> Double -> [Body] -> IO ()
 renderBodies _ _ [] = do return ()
-renderBodies r scale (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
-  let ratio = round (5*(mass/100))
+renderBodies r scale (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) | (5*(mass/100)) > 1 = do
   let center = (V2 (round (x * scale + cx)) (round (y * scale + cy)))
-  if  ratio > 0 then
-    (SDL.Primitive.fillCircle r center ratio white)
-  else
-    (SDL.Primitive.pixel r center white)
+  let ratio = (5*(mass/100))
+  (SDL.Primitive.fillCircle r center (round ratio) white)
+  (SDL.Primitive.circle r center (round ratio) white)
+  renderBodies r scale rest
+renderBodies r scale (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
+  let center = (V2 (round (x * scale + cx)) (round (y * scale + cy)))
+  xcross r center white
   renderBodies r scale rest
 
 
@@ -101,10 +115,13 @@ animateScene r n scale debug (bs:rest) = do
     SDL.rendererDrawColor r SDL.$= black
     SDL.clear r
 
+    -- check rescale factor
+    let rescale = if scale <= 0 then (cy/(usize (b2vs bs))) else scale
+
     -- display Quad tree debug *if needed*
-    renderDebugTree r scale debug bs
+    renderDebugTree r rescale debug bs
     -- display all bodies
-    renderBodies r scale bs
+    renderBodies r rescale bs
 
     -- show  the scene
     SDL.present r

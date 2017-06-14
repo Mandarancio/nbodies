@@ -1,25 +1,23 @@
-{-Barnes Hut Algo-}
+{-Barnes Hut Algorithm implmenetation-}
 
 module BarnesHut (QBox(..)
                  , QTree(..)
                  , fillTree
-                 , usize
-                 , vecbodies
                  , createRoot
-                 , b2vs
                  , BarnesHut.simulate
                  ) where
 import Phys
 
+-- Square bounding box
 data QBox = QB Vec2D Double deriving (Show, Eq) -- mass center, position, size
 
--- quad tree
+-- Quad tree structure
 data QTree = QN QBox Vec2D Double QTree QTree QTree QTree -- NODE Box, Mass (sub-nodes)
            | QL QBox Body -- Leaf (pos*mass, mass)
            | QE QBox-- Empty Leaf
         deriving (Show, Eq)
 
-
+-- check if a QBox contains a point
 contains :: QBox -> Vec2D -> Bool
 contains (QB _ 0) _ = False
 contains (QB (Vec2D l t) s) (Vec2D x y) =
@@ -27,23 +25,7 @@ contains (QB (Vec2D l t) s) (Vec2D x y) =
       h = y - t
   in (w > 0) && (w <= s) && (h > 0) && (h <= s)
 
-b2vs :: [Body] -> [Vec2D]
-b2vs [] = []
-b2vs (Body{pos=p, mass=m, mom=_}:rest) = p:(b2vs rest)
-
-mdist :: [Vec2D] -> Vec2D -> Double
-mdist [] _ = 0
-mdist bs b = maximum (map (Phys.dist b) bs)
-
-usize :: [Vec2D] -> Double
-usize [] = 0
-usize bs = maximum (map (dist zeroVec) bs)
-
-
-vecbodies :: [Body] -> [Vec2D]
-vecbodies [] = []
-vecbodies ((Body{pos=x, mass=_, mom=_}):rest) = x : (vecbodies rest)
-
+-- add body to a Quad Tree
 addBody :: QTree -> Phys.Body -> QTree
 addBody (QE box@(QB lt s)) body@(Phys.Body{pos=p, mass=m, mom=_}) | box `contains` p =
   QL (QB lt s) body
@@ -68,24 +50,26 @@ addBody (QN box@(QB lt s) mc mass tl bl tr br) body@(Phys.Body{pos=p, mass=m, mo
       nbr = addBody br body
   in QN (QB lt s) nmc total_mass ntl nbl ntr nbr
 
+
+-- Fill a tree with a list of bodies
 fillTree :: QTree -> [Phys.Body] -> QTree
 fillTree x [] = x
 fillTree x (b:rest) = fillTree (addBody x b) rest
 
 
+-- Compute the force of the quad tree over a body
 computeForce :: QTree -> Phys.Body -> Vec2D
 computeForce (QE _) b = zeroVec
 computeForce (QL _ b1) b2 | b1 == b2 = zeroVec
 computeForce (QL _ b1) b2 | b1 /= b2 = force b2 b1
-computeForce (QN box _ _ tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) =
+computeForce (QN box pmass size tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) || ((size/(dist pmass p))>=0.5) =
   (computeForce tl b) + (computeForce bl b) + (computeForce tr b) + (computeForce br b)
-computeForce (QN box@(QB _ size) pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} | (not (box `contains` p)) && ((size/(dist pmass p))<0.5) =
+computeForce (QN box@(QB _ size) pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} =
   let dist = pmass - p
       denom = ((magnetude dist)^3)
   in ((mass * m)/denom) .* dist
-computeForce (QN box@(QB _ size) pmass _ tl bl tr br) b@Body{pos=p, mass=m, mom=_} | (not (box `contains` p)) && ((size/(dist pmass p))>=0.5) =
-  (computeForce tl b) + (computeForce bl b) + (computeForce tr b) + (computeForce br b)
 
+-- private simulation step
 bhSimulate :: Double -> Double -> QTree -> [Body] -> [Body]
 bhSimulate _ _ _ [] = []
 bhSimulate g dT root (body@Body{pos=p, mass=m, mom=s}:rest) =
@@ -95,23 +79,18 @@ bhSimulate g dT root (body@Body{pos=p, mass=m, mom=s}:rest) =
       pos = p + (dT .* speed)
   in Body{pos=pos, mass=m, mom=speed}:(bhSimulate g dT root rest)
 
-
+-- create Empty universe rooot node
 createRoot :: [Body] -> QTree
 createRoot [] = QE (QB zeroVec 0)
 createRoot bodies =
-  let size = usize (b2vs bodies)
+  let size = Phys.usize (Phys.b2vs bodies)
       bbox = QB (Vec2D ((-size)-1) ((-size) -1)) (2*size + 2)
   in QE bbox
 
+-- simulate the universe using the BH Algorithm
 simulate :: Double -> Double -> [Body] -> [Body]
 simulate _ _ [] = []
 simulate g dT bodies =
   let root = createRoot bodies
       tree = fillTree root bodies
   in bhSimulate g dT tree bodies
-
--- test :: IO()
--- test = do
---   let bs = [Body{pos=(Vec2D 0.2 0.5), mass=1, mom=zeroVec},Body{pos=(Vec2D 0.3 0.2), mass=1, mom=zeroVec}]
---   let tree = fillTree (QE (QB zeroVec 2)) bs
---   print(tree)
