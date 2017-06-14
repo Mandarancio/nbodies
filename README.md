@@ -1,4 +1,3 @@
-[![Build Status](https://travis-ci.org/Mandarancio/nbodies.svg?branch=master)](https://travis-ci.org/Mandarancio/nbodies)
 # nbodies
 
 Siple N Body simulation in Haskell (rendered using SDL2)
