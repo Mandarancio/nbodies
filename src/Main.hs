@@ -105,7 +105,7 @@ renderBodies r scale (Body{pos=(Vec2D x y), mass=mass, mom=_}:rest) = do
 -- animate the scene
 animateScene :: SDL.Renderer -> GHC.Word.Word32 -> Double -> Bool -> [[Body]] -> IO ()
 animateScene _ _ _ _ [] = do return ()
-animateScene r n scale debug (bs:rest) = do
+animateScene r n scale qtree (bs:rest) = do
     -- wait n ms
     SDL.delay n
     events <- SDL.pollEvents
@@ -118,15 +118,15 @@ animateScene r n scale debug (bs:rest) = do
     -- check rescale factor
     let rescale = if scale <= 0 then (cy/(usize (b2vs bs))) else scale
 
-    -- display Quad tree debug *if needed*
-    renderDebugTree r rescale debug bs
+    -- display Quad tree  *if needed*
+    renderDebugTree r rescale qtree bs
     -- display all bodies
     renderBodies r rescale bs
 
     -- show  the scene
     SDL.present r
     -- die or continue!
-    if quit then  (return ()) else (animateScene r n scale debug rest)
+    if quit then  (return ()) else (animateScene r n scale qtree rest)
 
 
 
@@ -172,7 +172,7 @@ main = do
   SDL.showWindow window
 
   -- every N ms display a new step of the simulation
-  animateScene renderer 3 (scale cfg) (debug cfg) simulation
+  animateScene renderer 3 (scale cfg) (qtree cfg) simulation
   -- clean everything up
   SDL.destroyWindow window
   SDL.quit

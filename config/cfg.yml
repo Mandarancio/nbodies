@@ -1,5 +1,5 @@
 --- # Configuration
-debug: true                # debug enabled
+qtree: true                # show qtree enabled
 barnesHut: true            # barnes hut simulation
 g: 1                       # universal gravitational constant
 dT: 0.5                    # time interval of the simulation

@@ -1,5 +1,5 @@
 ---
-debug: false
+qtree: false
 barnesHut: true
 g: 1e3
 dT: 0.02

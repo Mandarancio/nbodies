@@ -13,7 +13,7 @@ import Phys
 data Config = Config{
   g::Double,
   dT::Double,
-  debug::Bool,
+  qtree::Bool,
   bhMode::Bool,
   scale::Double,
   bodies::[Phys.Body]
@@ -41,7 +41,7 @@ instance FromJSON Config where
     Config <$>
     v .:   "g"  <*>
     v .:   "dT" <*>
-    v .:   "debug" <*>
+    v .:   "qtree" <*>
     v .:   "barnesHut" <*>
     v .:   "scale" <*>
     v .:   "bodies"
