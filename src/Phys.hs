@@ -76,8 +76,7 @@ data Body = Body {pos::Vec2D,mass::Double,mom::Vec2D} deriving (Show, Eq)
 
 -- compute force between 2 bodies
 force :: Body -> Body -> Vec2D
-force (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | p1 == p2 =  zeroVec
-force (Body{pos=p1,mass=_,mom=_}) (Body{pos=p2,mass=_,mom=_}) | (dist p1 p2) < 0.002 = zeroVec
+force (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | (p1 == p2) || ((dist p1 p2) < 0.002) =  zeroVec
 force (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_O}) =
   let dist = (p2-p1)
   in ((m1*m2/(magnetude dist)^3) .* dist)
@@ -85,7 +84,7 @@ force (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_O}) =
 
 -- compute the acceleration between 2 bodies
 acc :: Double ->  Body -> Body -> Vec2D
-acc g (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | p1 == p2 =  zeroVec
+acc g (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | (p1 == p2) || ((dist p1 p2) < 0.002) =  zeroVec
 acc g (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_}) =
   let dist = (p2-p1)
   in (g*m2/(magnetude dist)^3) .* dist
