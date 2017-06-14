@@ -12,9 +12,7 @@ module Phys
   , zeroVec
   , simulate
   , magnetude
-  , acc
   , force
-  , createVec
   , b2vs
   , usize
   , VEnum(..)
@@ -28,10 +26,6 @@ data Vec2D = Vec2D Double Double deriving (Show, Eq)
 
 -- null Vector
 zeroVec = Vec2D 0 0
-
--- create Vec2d from (Double, Double)
-createVec :: (Double, Double) -> Vec2D
-createVec (a, b) = Vec2D a b
 
 -- basic numerical operations between Vector
 instance Num Vec2D where
@@ -48,7 +42,9 @@ instance Num Vec2D where
 (.*) x (Vec2D a b) = Vec2D (x*a) (x*b)
 
 -- multiplication vector double
-(*.) = flip (*.)
+(*.) :: Vec2D -> Double -> Vec2D
+(*.) (Vec2D a b) x = Vec2D (x*a) (x*b)
+
 -- division double vector
 (./) :: Double -> Vec2D -> Vec2D
 (./) x (Vec2D a b) = Vec2D (x/a) (x/b)
@@ -75,11 +71,11 @@ dist a b = magnetude (a-b)
 data Body = Body {pos::Vec2D,mass::Double,mom::Vec2D} deriving (Show, Eq)
 
 -- compute force between 2 bodies
-force :: Body -> Body -> Vec2D
-force (Body{pos=p1,mass=m1,mom=s1}) (Body{pos=p2,mass=_,mom=_}) | (p1 == p2) || ((dist p1 p2) < 0.002) =  zeroVec
-force (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_O}) =
+force :: Double -> Body -> Body -> Vec2D
+force _ (Body{pos=p1,mass=_,mom=_}) (Body{pos=p2,mass=_,mom=_}) | (p1 == p2) || ((dist p1 p2) < 0.002) =  zeroVec
+force g (Body{pos=p1,mass=m1,mom=_}) (Body{pos=p2,mass=m2,mom=_}) =
   let dist = (p2-p1)
-  in ((m1*m2/(magnetude dist)^3) .* dist)
+  in ((g*m1*m2/(magnetude dist)^3) .* dist)
 
 
 -- compute the acceleration between 2 bodies

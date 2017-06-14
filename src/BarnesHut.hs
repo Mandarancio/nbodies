@@ -58,22 +58,22 @@ fillTree x (b:rest) = fillTree (addBody x b) rest
 
 
 -- Compute the force of the quad tree over a body
-computeForce :: QTree -> Phys.Body -> Vec2D
-computeForce (QE _) b = zeroVec
-computeForce (QL _ b1) b2 | b1 == b2 = zeroVec
-computeForce (QL _ b1) b2 | b1 /= b2 = force b2 b1
-computeForce (QN box pmass size tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) || ((size/(dist pmass p))>=0.5) =
-  (computeForce tl b) + (computeForce bl b) + (computeForce tr b) + (computeForce br b)
-computeForce (QN box@(QB _ size) pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} =
+computeForce :: Double -> QTree -> Phys.Body -> Vec2D
+computeForce _ (QE _) b = zeroVec
+computeForce _ (QL _ b1) b2 | b1 == b2 = zeroVec
+computeForce g (QL _ b1) b2 | b1 /= b2 = force g b2 b1
+computeForce g (QN box pmass size tl bl tr br) b@Body{pos=p, mass=_, mom=_} | (box `contains` p) || ((size/(dist pmass p))>=0.5) =
+  (computeForce g tl b) + (computeForce g bl b) + (computeForce g tr b) + (computeForce g br b)
+computeForce g (QN box@(QB _ size) pmass mass _ _ _ _) Body{pos=p, mass=m, mom=_} =
   let dist = pmass - p
       denom = ((magnetude dist)^3)
-  in ((mass * m)/denom) .* dist
+  in ((g * mass * m)/denom) .* dist
 
 -- private simulation step
 bhSimulate :: Double -> Double -> QTree -> [Body] -> [Body]
 bhSimulate _ _ _ [] = []
 bhSimulate g dT root (body@Body{pos=p, mass=m, mom=s}:rest) =
-  let force = g .* (computeForce root body)
+  let force = (computeForce g root body)
       acc = force /. m
       speed = s + (dT .* acc)
       pos = p + (dT .* speed)
