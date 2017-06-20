@@ -26,6 +26,7 @@ import GHC.Word
 --- MAIN ENTRY POINT
 ---
 
+
 main :: IO ()
 main = do
   -- retrive args
@@ -47,10 +48,7 @@ main = do
   ---
 
   -- infinite simulation baby!
-  let simulation = if (bhMode cfg) then
-                      iterate (BarnesHut.simulate (g cfg) (dT cfg)) initUniverse
-                   else
-                      iterate (Phys.simulate (g cfg) (dT cfg)) initUniverse
+  let simulation = iterate ((if (bhMode cfg) then BarnesHut.simulate else Phys.simulate) (g cfg) (dT cfg)) initUniverse
 
   -- initialize SDL
   SDL.initialize [SDL.InitVideo]
