@@ -2,7 +2,7 @@
 qtree: true                # show qtree enabled
 barnesHut: true            # barnes hut simulation
 g: 1                       # universal gravitational constant
-dT: 0.5                    # time interval of the simulation
+dT: 0.1                    # time interval of the simulation
 scale: 1                   # scale (0 auto scale)
 bodies:                    # list of bodies
   - pos: {x:   0., y: 0.}  # position
